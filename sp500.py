@@ -43,4 +43,26 @@ def get_stock_data():
             print('Already have {}'.format(ticker))
 
 
-get_stock_data()
+# get_stock_data()
+
+# combining all the dataFrames created into 1 DF. Using only the Adj Close column
+
+def compile_data():
+    sp500 = pd.read_csv('sp500tickers.csv')
+    main_df = pd.DataFrame()
+    for count, ticker in enumerate(sp500['tickers'][:20]):
+        df = pd.read_csv('stock_dfs/{}.csv'.format(ticker))
+        df.set_index('Date', inplace=True)
+        df.rename(columns = {'Adj Close': ticker}, inplace=True)
+        df.drop(['Open', 'High', 'Low', 'Volume', 'Close'], axis=1, inplace=True)
+        if main_df.empty:
+            main_df = df
+        else:
+            main_df = main_df.join(df, how='outer')
+
+        if count%10 == 0:
+            print(count)
+    print(main_df.head())
+    main_df.to_csv('sp500_joint_adj_closes.csv')
+
+compile_data()
