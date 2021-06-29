@@ -1,10 +1,16 @@
+from typing import Sized
 import bs4 as bs
-import pickle
 import requests
 import pandas as pd
+import numpy as np
 import pandas_datareader as web
+import matplotlib.pyplot as plt
+from matplotlib import style
 import datetime as dt
 import os
+import plotly.express as px
+
+style.use('ggplot')
 
 def sp500_tickers():
     resp = requests.get('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
@@ -65,4 +71,49 @@ def compile_data():
     print(main_df.head())
     main_df.to_csv('sp500_joint_adj_closes.csv')
 
-compile_data()
+# compile_data()
+
+
+######################## Getting the relations between the companies between time frames
+# like 10, 12, 15 years. How these companies react to each other. basically correlation
+# between the companies
+
+def visualize_data():
+    df = pd.read_csv('sp500_joint_adj_closes.csv')
+    # df['AMD'].plot() # plots just the AMD Adj Close
+    # making a correlation data graph
+    df_corr = df.corr()
+
+    data = df_corr.values #gets us the numpy array not the index and columns, just the values
+
+    ########### Plotting heatmap with matplotlib #############
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    heatmap = ax.pcolor(data, cmap = plt.cm.RdYlGn)
+    fig.colorbar(heatmap)
+    ax.set_xticks(np.arange(data.shape[0]) + 0.5, minor=False)
+    ax.set_yticks(np.arange(data.shape[1]) + 0.5, minor=False)
+    ax.invert_yaxis()
+    ax.xaxis.tick_top()
+    column_labels = df_corr.columns
+    row_labels = df_corr.index
+
+    ax.set_xticklabels(column_labels)
+    ax.set_yticklabels(row_labels)
+    plt.xticks(rotation=90)
+    heatmap.set_clim(-1, 1)     # limits of the color, so -1 is minimum and 1 is maximum
+    plt.tight_layout()
+    plt.show()
+
+    ######## Plotting heatmap with Plotly ###############
+
+    fig2 = px.imshow(data,
+                    x = df_corr.columns,
+                    y = df_corr.columns,
+                    zmin=-1,
+                    zmax=1)
+
+    fig2.update_xaxes(side="top")
+    fig2.show()
+
+visualize_data()
